@@ -1,0 +1,6 @@
+paths:
+  base: "tmp"
+  saved_models: "files"
+
+tests:
+  dataset_file: "your_dataset_file.csv"
