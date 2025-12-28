@@ -277,7 +277,7 @@ class Automl:
             },
             LogisticRegression: {
                 "classifier__C": [0.1, 1, 10],
-                "classifier__penalty": ["l2"],
+                "classifier__l1_ratio": [0],
             },
             SVC: {
                 "classifier__C": [0.01, 1, 10],
