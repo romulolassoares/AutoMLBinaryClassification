@@ -297,7 +297,9 @@ class Automl:
             },
             SVC: {
                 "classifier__C": [0.01, 1, 10],
-                "classifier__kernel": ["linear", "rbf"],
+                "classifier__kernel": ["linear", "poly", "rbf", "sigmoid"],
+                "classifier__degree": [1,3,5,7,9,11],
+                "classifier__gamma": ["scale", "auto"],
             },
         }
 
