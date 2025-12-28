@@ -278,8 +278,15 @@ class Automl:
                 "classifier__class_weight": [None, "balanced", "balanced_subsample"],
             },
             GradientBoostingClassifier: {
-                "classifier__learning_rate": [0.01, 0.1],
-                "classifier__n_estimators": [100, 200],
+                "classifier__loss": ["log_loss", "exponential"],
+                "classifier__learning_rate": [0.001,0.01, 0.1],
+                "classifier__n_estimators": [100, 200, 250, 500, 1000],
+                "classifier__subsample": [0.25, 0.5, 0.75, 1.0],
+                "classifier__criterion": ["friedman_mse", "squared_error"],
+                "classifier__min_samples_split": [2, 5, 10, 15],
+                "classifier__min_samples_leaf": [1, 2, 4, 8, 10],
+                "classifier__max_depth": [3, 5, 7, 9, 11, 13, 15],
+                "classifier__max_features": [None, "sqrt", "log2"],
             },
             LogisticRegression: {
                 "classifier__C": [0.1, 1, 10],
