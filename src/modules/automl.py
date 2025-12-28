@@ -268,8 +268,14 @@ class Automl:
 
         param_grid = {
             RandomForestClassifier: {
-                "classifier__n_estimators": [50, 100],
+                "classifier__n_estimators": [25, 50, 100, 200, 500, 1000],
+                "classifier__criterion": ["gini", "entropy"],
                 "classifier__max_depth": [None, 10, 20],
+                "classifier__min_samples_split": [2, 5, 10],
+                "classifier__min_samples_leaf": [1, 2, 4],
+                "classifier__max_features": [None, "sqrt", "log2"],
+                "classifier__bootstrap": [True, False],
+                "classifier__class_weight": [None, "balanced", "balanced_subsample"],
             },
             GradientBoostingClassifier: {
                 "classifier__learning_rate": [0.01, 0.1],
