@@ -7,11 +7,11 @@ This project automatically detects and trains the best **binary classification**
 ## 📦 Requirements
 
 - Python 3.12
-- Poetry
+- Uv 0.9.18
 
 Install dependencies with:
 ``` shell
-poetry install --no-root
+uv sync
 ```
 
 ## 📁 Usage
