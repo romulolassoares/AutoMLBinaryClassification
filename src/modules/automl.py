@@ -289,8 +289,11 @@ class Automl:
                 "classifier__max_features": [None, "sqrt", "log2"],
             },
             LogisticRegression: {
-                "classifier__C": [0.1, 1, 10],
-                "classifier__l1_ratio": [0],
+                "classifier__C": [0.01, 0.1, 1, 10],
+                "classifier__l1_ratio": [0, 0.5, 1],
+                "classifier__fit_intercept": [Ture, False],
+                "classifier__solver": ["lbfgs", "liblinear", "newton-cholesky", "sag", "saga"],
+                "classifier__max_iter": [100, 150, 200, 250, 500]
             },
             SVC: {
                 "classifier__C": [0.01, 1, 10],
