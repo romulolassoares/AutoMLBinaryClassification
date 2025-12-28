@@ -1,23 +1,25 @@
 import os
-import joblib
-import pandas as pd
-
 from typing import List, Tuple
 
-from sklearn.model_selection import (
-    train_test_split,
-    cross_val_score,
-    RandomizedSearchCV,
-)
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+import joblib
+import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+)
 from sklearn.impute import SimpleImputer
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
-import yaml
+from sklearn.model_selection import (
+    RandomizedSearchCV,
+    cross_val_score,
+    train_test_split,
+)
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.svm import SVC
+
 from utils.create_folders import create_dirs
 
 
@@ -36,46 +38,58 @@ def handle_with_config_data(config: dict):
 
 
 class Automl:
-    """Automl class for automating the process of training, tunning,
+    """Automl class for automating the process of training, tuning,
     evaluating and saving machine learning models.
-    
-    This class simplifies common machine learning tasks using `scikit-learn`
+
+    This class simplifies common machine learning tasks using
+    `scikit-learn`:
     - Splitting a dataset into training and testing sets.
     - Automatically preprocessing numeric and categorical features.
     - Training and comparing multiple models using cross-validation.
     - Tuning the best models using randomized search.
-    - Saving trained models to disk
-    - Evaluating model performance on a held-out tests set.
-    
+    - Saving trained models to disk.
+    - Evaluating model performance on a held-out test set.
+
     Attributes:
-        filename (str): The filename used as a base for saving trained models.
-        metric (str): The scoring metric used to evaluation (e.g. "accuracy").
-        saved_models_path (str): Path weher trained models are saved.
-        X_train, X_test (pd.DataFrame): Feature subsets for training and testing.
-        y_train, y_test (pd.DataFrame): Target subsets for training and testing.
-        preprocessor: (sklearn.compose.ColumnTransformer): Sata preprocessing.
-        
+        filename (str): The filename used as a base for saving trained
+            models.
+        metric (str): The scoring metric used for evaluation
+            (e.g. "accuracy").
+        saved_models_path (str): Path where trained models are saved.
+        X_train, X_test (pd.DataFrame): Feature subsets for training and
+            testing.
+        y_train, y_test (pd.DataFrame): Target subsets for training and
+            testing.
+        preprocessor (sklearn.compose.ColumnTransformer): Data
+            preprocessing pipeline.
+
     Parameters:
-        dataset (pd.DataFrame): The full dataset including features and target column.
-        filename (str): Filenameused as base name for saving models.
-        metric (str, optional): Scoring metric to optimize during model selection and tunning. Defaults to "accuracy"
-        target_position (int, optional): Index of the column in the dataset. Defaults to -1 (last column).
-        config (dict, optional): Configuration dictionary. If not provide, defaults are used.
-    
+        dataset (pd.DataFrame): The full dataset including features and
+            target column.
+        filename (str): Filename used as base name for saving models.
+        metric (str, optional): Scoring metric to optimize during model
+            selection and tuning. Defaults to "accuracy".
+        target_position (int, optional): Index of the target column in
+            the dataset. Defaults to -1 (last column).
+        config (dict, optional): Configuration dictionary. If not
+            provided, defaults are used.
+
     Methods:
-        find_best_models(m: int) -> List[Pipeline]
+        find_best_models(n: int) -> List[Pipeline]
         tuning_model(pipeline: Pipeline) -> Pipeline
         save_model(pipeline: Pipeline, model_name: str = "") -> str
-        eval_model(pipeline: Pipeline) -> Tuple[
-    
+        eval_model(pipeline: Pipeline) -> Tuple[...]
+
     Notes:
-        - Models supported for training and tunning include:
+        - Models supported for training and tuning include:
             - RandomForestClassifier
             - GradientBoostingClassifier
-            - LogisticRegressions
+            - LogisticRegression
             - SVC
-        - Uses OneHotEncoder for categorical fetures and StandardScales for numeric features.
-        - Uses 3-fold cross-validation and a fixed random seed for reproducibility.
+        - Uses OneHotEncoder for categorical features and StandardScaler
+          for numeric features.
+        - Uses 3-fold cross-validation and a fixed random seed for
+          reproducibility.
     """
     def __init__(
         self,
@@ -86,7 +100,8 @@ class Automl:
         config: dict = {},
     ) -> None:
         """
-        Initializes the Automl object by preparing dataset splits and preprocessing pipeline.
+        Initializes the Automl object by preparing dataset splits and
+        preprocessing pipeline.
 
         Parameters
         ----------
@@ -95,9 +110,11 @@ class Automl:
         filename : str
             The base filename to use for saving the trained model.
         metric : str, optional
-            Scoring metric to use for model evaluation and tuning. Default is "accuracy".
+            Scoring metric to use for model evaluation and tuning.
+            Default is "accuracy".
         target_position : int, optional
-            The index of the target column in the dataset. Default is -1 (last column).
+            The index of the target column in the dataset. Default is -1
+            (last column).
         config : dict, optional
             Configuration dictionary with optional keys:
             - "paths": {
@@ -114,12 +131,14 @@ class Automl:
         self.X = self._dataset.drop(columns=[self.target])
         self.y = self._dataset[self.target]
 
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            self.X,
-            self.y,
-            test_size=0.3,
-            stratify=self.y,
-            random_state=42,  # Answer for everyfing
+        self.X_train, self.X_test, self.y_train, self.y_test = (
+            train_test_split(
+                self.X,
+                self.y,
+                test_size=0.3,
+                stratify=self.y,
+                random_state=42,  # Answer for everything
+            )
         )
         self.preprocessor = self._create_preprocessor()
 
@@ -130,20 +149,29 @@ class Automl:
 
     def _create_preprocessor(self):
         """
-        Creates a preprocessing pipeline for numerical and categorical features.
+        Creates a preprocessing pipeline for numerical and categorical
+        features.
 
         Returns
         -------
         sklearn.compose.ColumnTransformer
             A transformer that applies:
             - Mean imputation and standard scaling to numerical features.
-            - Mode imputation and one-hot encoding to categorical features.
+            - Mode imputation and one-hot encoding to categorical
+              features.
         """
-        num_features = self.X.select_dtypes(include=["int64", "float64"]).columns
-        cat_features = self.X.select_dtypes(include=["object", "category"]).columns
+        num_features = self.X.select_dtypes(
+            include=["int64", "float64"]
+        ).columns
+        cat_features = self.X.select_dtypes(
+            include=["object", "category"]
+        ).columns
 
         num_pipeline = Pipeline(
-            [("imputer", SimpleImputer(strategy="mean")), ("scaler", StandardScaler())]
+            [
+                ("imputer", SimpleImputer(strategy="mean")),
+                ("scaler", StandardScaler()),
+            ]
         )
 
         cat_pipeline = Pipeline(
@@ -154,12 +182,16 @@ class Automl:
         )
 
         return ColumnTransformer(
-            [("num", num_pipeline, num_features), ("cat", cat_pipeline, cat_features)]
+            [
+                ("num", num_pipeline, num_features),
+                ("cat", cat_pipeline, cat_features),
+            ]
         )
 
     def find_best_models(self, n: int) -> List[Pipeline]:
         """
-        Trains multiple classification models and selects the top-n based on cross-validation score.
+        Trains multiple classification models and selects the top-n based
+        on cross-validation score.
 
         Parameters
         ----------
@@ -174,43 +206,55 @@ class Automl:
         Raises
         ------
         ValueError
-            If `n` is less than 1 or more than the number of available models.
+            If `n` is less than 1 or more than the number of available
+            models.
         """
         models = {
-            "RandonForest": RandomForestClassifier(),
+            "RandomForest": RandomForestClassifier(),
             "LogisticRegression": LogisticRegression(),
             "GradientBoosting": GradientBoostingClassifier(),
             "SVC": SVC(probability=True),
         }
 
         results = []
-        for name, model in models.items():
+        for model in models.values():
             pipeline = Pipeline(
-                [("preprocessing", self.preprocessor), ("classifier", model)]
+                [
+                    ("preprocessing", self.preprocessor),
+                    ("classifier", model),
+                ]
             )
             score = cross_val_score(
-                pipeline, self.X_train, self.y_train, cv=3, scoring=self.metric
+                pipeline,
+                self.X_train,
+                self.y_train,
+                cv=3,
+                scoring=self.metric,
             ).mean()
-            # results.append(score)
             results.append((pipeline, score))
         results.sort(key=lambda x: x[1], reverse=True)
         top_models = results[:n]
 
-        return [pipe.fit(self.X_train, self.y_train) for pipe, _ in top_models]
+        return [
+            pipe.fit(self.X_train, self.y_train) for pipe, _ in top_models
+        ]
 
     def tuning_model(self, pipeline: Pipeline) -> Pipeline:
         """
-        Performs hyperparameter tuning on a model pipeline using randomized search.
+        Performs hyperparameter tuning on a model pipeline using
+        randomized search.
 
         Parameters
         ----------
         pipeline : sklearn.pipeline.Pipeline
-            A scikit-learn pipeline containing a classifier as its final step.
+            A scikit-learn pipeline containing a classifier as its final
+            step.
 
         Returns
         -------
         sklearn.pipeline.Pipeline
-            The pipeline with the best hyperparameters found, or the original pipeline if tuning is unsupported.
+            The pipeline with the best hyperparameters found, or the
+            original pipeline if tuning is unsupported.
 
         Notes
         -----
@@ -229,7 +273,7 @@ class Automl:
             },
             GradientBoostingClassifier: {
                 "classifier__learning_rate": [0.01, 0.1],
-                "classifier__n_estimator": [100, 200],
+                "classifier__n_estimators": [100, 200],
             },
             LogisticRegression: {
                 "classifier__C": [0.1, 1, 10],
@@ -252,7 +296,7 @@ class Automl:
             cv=3,
             scoring=self.metric,
             verbose=0,
-            random_state=42,  # Answer for everyfing
+            random_state=42,  # Answer for everything
         )
         search.fit(self.X_train, self.y_train)
         return search.best_estimator_
@@ -279,13 +323,15 @@ class Automl:
             If the model file cannot be written to the disk.
         """
         if not model_name:
-            model_name = type(pipeline.named_steps["classifier"]).__name__
+            model_name = type(
+                pipeline.named_steps["classifier"]
+            ).__name__
 
         model_name = model_name.replace(" ", "_")
         base_path = self.saved_models_path
 
-        file_name = self.filename.split('/')[-1]
-        file_name = file_name.split('.')[0]
+        file_name = self.filename.split("/")[-1]
+        file_name = file_name.split(".")[0]
 
         model_file_name = f"{file_name}_{model_name}.pkl"
         pickle_file = os.path.join(base_path, model_file_name)
@@ -298,7 +344,14 @@ class Automl:
 
     def eval_model(
         self, pipeline: Pipeline
-    ) -> Tuple[float, pd.DataFrame, pd.Series, pd.DataFrame, pd.Series, pd.DataFrame]:
+    ) -> Tuple[
+        float,
+        pd.DataFrame,
+        pd.Series,
+        pd.DataFrame,
+        pd.Series,
+        pd.DataFrame,
+    ]:
         """
         Evaluates a trained model pipeline on the test dataset.
 
@@ -316,13 +369,16 @@ class Automl:
             - y_train (pd.Series): Training target values.
             - X_test (pd.DataFrame): Test feature set.
             - y_test (pd.Series): Test target values.
-            - predictions (pd.DataFrame): Model predictions on the test set.
+            - predictions (pd.DataFrame): Model predictions on the test
+              set.
         """
         y_pred = pipeline.predict(self.X_test)
 
         y_proba = None
-        if hasattr(pipeline.named_steps["classifier"], "predict_proba"):
-            y_proba = pipeline.predict_proba(self.X)
+        if hasattr(
+            pipeline.named_steps["classifier"], "predict_proba"
+        ):
+            y_proba = pipeline.predict_proba(self.X_test)
 
         accuracy = accuracy_score(self.y_test, y_pred)
 
