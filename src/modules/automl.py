@@ -122,7 +122,7 @@ class Automl:
             random_state=42,  # Answer for everyfing
         )
         self.preprocessor = self._create_preprocessor()
-        print(config)
+
         config = handle_with_config_data(config)
         base_path = config["paths"]["base"]
         saved_models_path = config["paths"]["saved_models"]
@@ -325,7 +325,6 @@ class Automl:
             y_proba = pipeline.predict_proba(self.X)
 
         accuracy = accuracy_score(self.y_test, y_pred)
-        print(f"Teste Accurracy: {accuracy:.4f} with {y_proba}%")
 
         return (
             accuracy,
