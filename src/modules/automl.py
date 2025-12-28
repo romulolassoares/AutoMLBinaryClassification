@@ -283,7 +283,11 @@ class Automl:
 
         model_name = model_name.replace(" ", "_")
         base_path = self.saved_models_path
-        model_file_name = f"{self.filename.split('.')[0]}_{model_name}.pkl"
+
+        file_name = self.filename.split('/')[-1]
+        file_name = file_name.split('.')[0]
+
+        model_file_name = f"{file_name}_{model_name}.pkl"
         pickle_file = os.path.join(base_path, model_file_name)
 
         if os.path.exists(pickle_file):
