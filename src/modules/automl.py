@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import joblib
 import pandas as pd
@@ -344,14 +344,7 @@ class Automl:
 
     def eval_model(
         self, pipeline: Pipeline
-    ) -> Tuple[
-        float,
-        pd.DataFrame,
-        pd.Series,
-        pd.DataFrame,
-        pd.Series,
-        pd.DataFrame,
-    ]:
+    ) -> Dict[str, Any]:
         """
         Evaluates a trained model pipeline on the test dataset.
 
@@ -362,8 +355,8 @@ class Automl:
 
         Returns
         -------
-        Tuple
-            A tuple containing:
+        Dict
+            A dictionary containing:
             - accuracy (float): Accuracy score on the test set.
             - X_train (pd.DataFrame): Training feature set.
             - y_train (pd.Series): Training target values.
@@ -371,6 +364,7 @@ class Automl:
             - y_test (pd.Series): Test target values.
             - predictions (pd.DataFrame): Model predictions on the test
               set.
+            - model_name (str): Name of the model.
         """
         y_pred = pipeline.predict(self.X_test)
 
@@ -382,11 +376,14 @@ class Automl:
 
         accuracy = accuracy_score(self.y_test, y_pred)
 
-        return (
-            accuracy,
-            self.X_train,
-            self.y_train,
-            self.X_test,
-            self.y_test,
-            pd.DataFrame(y_pred, columns=["predictions"]),
-        )
+        model_name = type(pipeline.named_steps["classifier"]).__name__
+
+        return {
+            "accuracy": accuracy,
+            "X_train": self.X_train,
+            "y_train": self.y_train,
+            "X_test": self.X_test,
+            "y_test": self.y_test,
+            "predictions": pd.DataFrame(y_pred, columns=["predictions"]),
+            "model_name": model_name,
+        }
